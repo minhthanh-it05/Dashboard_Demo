@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Bàn giao từ Sales{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+  <h1 class="h4 mb-0">Bàn giao từ Sales</h1>
+  {% if is_pm %}<a class="btn btn-primary" href="{% url 'projects:handover_create' %}">Nhập hồ sơ bàn giao</a>{% endif %}
+</div>
+<p class="text-muted small">Giai đoạn 1: hồ sơ được nhập tay. Đồng bộ từ OplaCRM sẽ làm ở Phase 2, sau khi được cấp quyền API.</p>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-8 col-md-4">
+    <label class="visually-hidden" for="status">Trạng thái</label>
+    <select class="form-select" id="status" name="status">
+      <option value="">Tất cả trạng thái</option>
+      {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if value == current_status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-4 col-md-2"><button class="btn btn-outline-secondary w-100" type="submit">Lọc</button></div>
+</form>
+
+<div class="card shadow-sm"><div class="table-responsive">
+  <table class="table table-hover mb-0">
+    <thead class="table-light"><tr><th>Thương vụ</th><th>Khách hàng</th><th>Mã Opportunity</th>{% if can_view_finance %}<th>Giá trị bán</th>{% endif %}<th>Trạng thái</th><th>Dự án</th></tr></thead>
+    <tbody>
+    {% for h in handovers %}
+      <tr>
+        <td><a href="{{ h.get_absolute_url }}">{{ h.deal_name }}</a>{% if h.is_demo_data %} <span class="badge text-bg-warning">Mẫu</span>{% endif %}</td>
+        <td>{{ h.customer_name }}</td>
+        <td>{{ h.external_opportunity_id|default:"—" }}</td>
+        {% if can_view_finance %}<td>{{ h.committed_value|money:h.currency }}</td>{% endif %}
+        <td><span class="badge text-bg-{{ h.status|badge }}">{{ h.get_status_display }}</span></td>
+        <td>{% with p=h.linked_project %}{% if p %}{{ p.code }}{% else %}—{% endif %}{% endwith %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="text-muted text-center py-4">Chưa có hồ sơ bàn giao.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% include "core/_pagination.html" %}
+{% endblock %}

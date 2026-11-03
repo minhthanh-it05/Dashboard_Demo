@@ -1,0 +1,22 @@
+{# Expects: entries, add_url (optional) #}
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h2 class="h6 mb-0">Lịch sử trạng thái</h2>
+  {% if add_url %}<a class="btn btn-sm btn-primary" href="{{ add_url }}">Ghi nhận trạng thái</a>{% endif %}
+</div>
+<div class="alert alert-secondary small py-2">
+  Trạng thái do người dùng ghi nhận, không đọc từ MISA. Trạng thái chính thức vẫn là trên MISA.
+</div>
+<div class="list-group shadow-sm">
+  {% for s in entries %}
+    <div class="list-group-item">
+      <div class="d-flex justify-content-between flex-wrap gap-2">
+        <strong>{{ s.status_label }}</strong>
+        <span class="small text-muted">{{ s.recorded_at|date:"d/m/Y H:i" }} · {{ s.recorded_by }}</span>
+      </div>
+      <div class="small"><span class="badge text-bg-light border">{{ s.get_status_source_display }}</span></div>
+      {% if s.evidence_note %}<div class="small text-muted mt-1">{{ s.evidence_note|linebreaksbr }}</div>{% endif %}
+    </div>
+  {% empty %}
+    <div class="list-group-item text-muted text-center py-3">Chưa ghi nhận trạng thái nào.</div>
+  {% endfor %}
+</div>

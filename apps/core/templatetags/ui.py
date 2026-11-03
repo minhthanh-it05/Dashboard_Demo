@@ -1,0 +1,48 @@
+from decimal import Decimal
+
+from django import template
+
+register = template.Library()
+
+BADGE_CLASSES = {
+    # projects
+    "PENDING_HANDOVER": "secondary",
+    "READY": "info",
+    "IN_PROGRESS": "primary",
+    "ON_HOLD": "warning",
+    "COMPLETED": "success",
+    "CANCELLED": "dark",
+    # handovers
+    "PENDING": "secondary",
+    "NEEDS_INFO": "warning",
+    "ACCEPTED": "success",
+    "REJECTED": "danger",
+    # milestones / tasks / issues
+    "PLANNED": "secondary",
+    "TODO": "secondary",
+    "BLOCKED": "danger",
+    "DONE": "success",
+    "OPEN": "danger",
+    "RESOLVED": "success",
+    "CLOSED": "dark",
+    # severity / priority
+    "LOW": "secondary",
+    "MEDIUM": "info",
+    "HIGH": "warning",
+    "CRITICAL": "danger",
+}
+
+
+@register.filter
+def badge(value):
+    return BADGE_CLASSES.get(str(value), "secondary")
+
+
+@register.filter
+def money(value, currency=""):
+    if value is None or value == "":
+        return "—"
+    value = Decimal(value)
+    places = 0 if currency in ("", "VND") else 2
+    formatted = f"{value:,.{places}f}".replace(",", ".") if places == 0 else f"{value:,.{places}f}"
+    return f"{formatted} {currency}".strip()

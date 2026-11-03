@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Dự án{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h4 mb-0">Dự án</h1>
+  {% if is_pm %}<a class="btn btn-primary" href="{% url 'projects:create' %}">Tạo dự án</a>{% endif %}
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-12 col-md-5">
+    <label class="visually-hidden" for="q">Tìm kiếm</label>
+    <input class="form-control" id="q" name="q" value="{{ query }}" placeholder="Mã, tên dự án, khách hàng">
+  </div>
+  <div class="col-8 col-md-4">
+    <label class="visually-hidden" for="status">Trạng thái</label>
+    <select class="form-select" id="status" name="status">
+      <option value="">Tất cả trạng thái</option>
+      {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if value == current_status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-4 col-md-3"><button class="btn btn-outline-secondary w-100" type="submit">Lọc</button></div>
+</form>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr><th>Mã</th><th>Tên dự án</th><th>Khách hàng</th><th>Trạng thái</th><th>Quản lý</th><th>Kết thúc (KH)</th><th title="% do người dùng tự báo cáo, không phải công thức">% báo cáo</th></tr>
+      </thead>
+      <tbody>
+      {% for p in projects %}
+        <tr>
+          <td><a href="{{ p.get_absolute_url }}">{{ p.code }}</a>{% if p.is_demo_data %} <span class="badge text-bg-warning">Mẫu</span>{% endif %}</td>
+          <td>{{ p.name }}</td>
+          <td>{{ p.customer_name }}</td>
+          <td><span class="badge text-bg-{{ p.status|badge }}">{{ p.get_status_display }}</span></td>
+          <td>{{ p.manager }}</td>
+          <td>{{ p.planned_end_date|date:"d/m/Y"|default:"—" }}{% if p.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</td>
+          <td>{% if p.latest_percent is not None %}{{ p.latest_percent }}%{% else %}—{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">
+          {% if query or current_status %}Không có dự án khớp bộ lọc. <a href="{% url 'projects:list' %}">Xoá bộ lọc</a>
+          {% elif is_pm %}Chưa có dự án nào. <a href="{% url 'projects:create' %}">Tạo dự án đầu tiên</a>
+          {% else %}Bạn chưa được thêm vào dự án nào.{% endif %}
+        </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "core/_pagination.html" %}
+{% endblock %}
