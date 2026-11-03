@@ -21,6 +21,13 @@ Cập nhật file này khi một mục được trả lời. Mục **Giả đị
 | A13 | "Dự án cần chú ý" = quá hạn kế hoạch hoặc có task quá hạn hoặc có vấn đề Cao/Nghiêm trọng đang mở; mốc "sắp đến hạn" = 14 ngày; task "cần cập nhật" = đang làm và không có cập nhật trong 7 ngày | `dashboard/views.py` | Trưởng phòng Dự án |
 | A14 | Giao diện tiếng Việt; tiền tệ mặc định VND | templates, models | Nhóm phát triển |
 | A15 | Thành viên chỉ chọn được task của mình khi gửi cập nhật tiến độ; chỉ người báo cáo, người xử lý hoặc PM sửa được vấn đề | `ProgressUpdateForm`, `permissions.can_edit_issue` | Phòng Dự án |
+| A16 | Opportunity thắng → tự tạo bàn giao "Chờ tiếp nhận"; quan hệ 1 Opportunity ↔ 1 bàn giao | `sales/services._ensure_pending_handover` | Sales + Dự án |
+| A17 | OplaCRM được cập nhật trường `committed_*` của bàn giao chỉ khi bàn giao còn Chờ tiếp nhận / Cần bổ sung; sau đó chỉ cảnh báo | `sales/services.py` | Sales + Dự án |
+| A18 | Chỉ SYSTEM_ADMIN chạy đồng bộ từ giao diện; PM chỉ xem trạng thái | `roles.can_manage_integrations` | IT / Ban giám đốc |
+| A19 | Chỉ FINANCE_VIEWER được nhập file CSV tài chính | `roles.can_import_finance` | Kế toán |
+| A20 | Mẫu CSV công nợ/tồn kho là **đề xuất** của nhóm (cột trong `docs/samples/`), UTF-8, dấu `.` thập phân, không phân cách hàng nghìn | `finance/csv_import.py` | Kế toán |
+| A21 | Số dư công nợ và tồn kho lấy dạng snapshot đầy đủ; lô mới nhất (API hoặc CSV) là lô "đang hiệu lực" | `finance/services.store_snapshot` | Kế toán |
+| A22 | Record chuẩn hoá (`integrations/records.py`) chứa các trường tối thiểu do nhóm chọn; có thể phải bổ sung khi biết schema thật | `integrations/records.py` | Nhóm phát triển |
 
 ## B. Nghiệp vụ dự án
 
@@ -51,6 +58,9 @@ Cập nhật file này khi một mục được trả lời. Mục **Giả đị
 - Công ty đang dùng gói OplaCRM nào, bao nhiêu seat? API đã được bật trên tenant chưa?
 - Có endpoint cho báo giá, BOQ, hợp đồng, activity, file không?
 - Rate limit, trường hỗ trợ đồng bộ tăng dần (incremental), các sự kiện Webhook, cơ chế chữ ký/retry?
+- Xác thực dùng token, OAuth client hay cách khác? (`.env` đang để sẵn `OPLACRM_API_TOKEN`, chỉ là chỗ giữ, chưa dùng)
+- Stage nào được coi là "Won"? Có trường cờ riêng không?
+- Có sandbox để chạy thử đồng bộ không?
 
 ## E. Tài chính / MISA (Phase 3)
 
@@ -58,10 +68,17 @@ Cập nhật file này khi một mục được trả lời. Mục **Giả đị
 - AMISKT trên Developer Portal và ACT Open API có phải hai API khác nhau không? Nên dùng API nào?
 - Có endpoint đọc hoá đơn, chứng từ, phiếu thu/chi, trạng thái thanh toán không? meInvoice có phải nguồn riêng không?
 - Rate limit, quyền dữ liệu, sandbox, quyền chỉ đọc?
-- Kế toán xuất được những báo cáo CSV/XLSX nào, và ai phụ trách xuất/nhập?
+- Kế toán xuất được những báo cáo CSV/XLSX nào, và ai phụ trách xuất/nhập? Mẫu cột đề xuất trong `docs/samples/` có dùng được không?
+- Các điểm trong ghi chú cần MISA xác nhận trước khi bật live: đường dẫn connect/sync, tên trường request connect (`app_id`, `access_code`, `org_company_code`), response connect có bọc trong envelope chung không, định dạng `expired_time`, header `X-MISA-AccessToken`, giới hạn `take` = 100.
+- Schema dòng dữ liệu của `get_list_acc_obj_debt` và `get_list_inventory_balance` là gì? Số dư phải thu và phải trả tách thành hai cột hay một cột có dấu?
+- Callback: thuật toán ký chính xác (HMAC-SHA256 với khoá `app_id`?) và cách chuẩn hoá chuỗi trước khi ký.
+- Có cách nào gắn công nợ với dự án (mã dự án trên chứng từ, mã hợp đồng…) không?
 
 ## F. Kỹ thuật (nhóm phát triển)
 
 - Bootstrap và Chart.js đang tải từ CDN jsdelivr. Nếu môi trường triển khai không có Internet, cần vendor các file này vào `static/`.
 - Hàm sinh mã tuần tự chưa an toàn khi tạo đồng thời; unique constraint là chốt chặn cuối cùng. Cần xem lại nếu khối lượng tăng.
-- `.gitignore` đang chặn `*.csv`, `*.xlsx` để tránh commit file nghiệp vụ. Nếu cần commit file mẫu (template import) thì thêm ngoại lệ có chủ đích.
+- `.gitignore` đang chặn `*.csv`, `*.xlsx` để tránh commit file nghiệp vụ; riêng `docs/samples/*.csv` (dữ liệu hư cấu) được cho phép.
+- Chưa có khoá chống chạy chồng hai lượt đồng bộ cùng loại; cần thêm khi gắn scheduler.
+- Import XLSX chưa hỗ trợ (cần thêm dependency như `openpyxl`); hiện chỉ nhận CSV.
+- Chưa có bảng đối chiếu khách hàng OplaCRM ↔ đối tượng MISA ↔ dự án; cần quy tắc ghép mã trước khi xây (không ghép theo tên).

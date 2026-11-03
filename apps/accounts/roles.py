@@ -43,6 +43,29 @@ def can_view_handovers(user):
     return is_project_manager(user) or has_role(user, SALES_VIEWER)
 
 
+def can_view_sales_data(user):
+    """Synced OplaCRM read model (accounts, opportunities)."""
+    return can_view_handovers(user)
+
+
+def can_manage_integrations(user):
+    """Start sync jobs (assumption: system admins only)."""
+    return user.is_authenticated and (user.is_superuser or has_role(user, SYSTEM_ADMIN))
+
+
+def can_view_integrations(user):
+    return can_manage_integrations(user) or is_project_manager(user)
+
+
+def can_import_finance(user):
+    """Upload finance CSV reports (assumption: FINANCE_VIEWER only).
+
+    Importers must also be able to see the result, so this stays a subset of
+    can_view_finance.
+    """
+    return user.is_authenticated and (user.is_superuser or has_role(user, FINANCE_VIEWER))
+
+
 def project_manager_users():
     return (
         get_user_model()
