@@ -1,29 +1,76 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Đăng nhập{% endblock %}
-{% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-sm-8 col-md-5 col-lg-4">
-    <div class="card shadow-sm mt-4">
-      <div class="card-body">
-        <h1 class="h5 mb-3">Đăng nhập</h1>
-        {% if form.errors %}
-          <div class="alert alert-danger py-2 small">Tên đăng nhập hoặc mật khẩu chưa đúng. Vui lòng thử lại.</div>
-        {% endif %}
-        <form method="post" novalidate>
-          {% csrf_token %}
-          <div class="mb-3">
-            <label class="form-label" for="id_username">Tên đăng nhập</label>
-            <input class="form-control" id="id_username" name="username" autocomplete="username" required autofocus value="{{ form.username.value|default:'' }}">
-          </div>
-          <div class="mb-3">
-            <label class="form-label" for="id_password">Mật khẩu</label>
-            <input class="form-control" type="password" id="id_password" name="password" autocomplete="current-password" required>
-          </div>
-          <input type="hidden" name="next" value="{{ next }}">
-          <button class="btn btn-primary w-100" type="submit">Đăng nhập</button>
-        </form>
+{% block shell %}
+<div class="auth">
+  <section class="auth-brand" aria-hidden="true">
+    {# Structured-cabling backdrop: data packets flow along the cable runs. #}
+    <svg class="auth-cables" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+      <g class="cable-run">
+        <path d="M-20 140 H220 Q260 140 260 180 V420 Q260 460 300 460 H640"/>
+        <path d="M-20 300 H140 Q180 300 180 340 V620 Q180 660 220 660 H640"/>
+        <path d="M640 90 H420 Q380 90 380 130 V300 Q380 340 340 340 H-20"/>
+        <path d="M640 560 H480 Q440 560 440 600 V820"/>
+      </g>
+      <g class="cable-packets">
+        <path d="M-20 140 H220 Q260 140 260 180 V420 Q260 460 300 460 H640"/>
+        <path d="M-20 300 H140 Q180 300 180 340 V620 Q180 660 220 660 H640"/>
+        <path d="M640 90 H420 Q380 90 380 130 V300 Q380 340 340 340 H-20"/>
+        <path d="M640 560 H480 Q440 560 440 600 V820"/>
+      </g>
+    </svg>
+
+    <div class="auth-brand-top">
+      <img class="auth-logo" src="{% static 'img/netcab-logo-white.png' %}" alt="">
+    </div>
+
+    <div class="auth-brand-copy">
+      <h1>Quản lý dự án NETCAB</h1>
+      <p>Một nơi cho bàn giao, kế hoạch, tiến độ và công việc của Phòng Dự án.</p>
+    </div>
+
+    <div class="feature-rail">
+      <div class="feature-track">
+        {% include "registration/_features.html" %}
+        {% include "registration/_features.html" with duplicate=True %}
       </div>
     </div>
-  </div>
+  </section>
+
+  <section class="auth-form">
+    <div class="auth-card">
+      <img class="auth-mobile-logo" src="{% static 'img/netcab-logo.png' %}" alt="NETCAB">
+      <h2 class="auth-title">Đăng nhập</h2>
+      <p class="auth-subtitle">Dùng tài khoản nội bộ được cấp cho bạn.</p>
+
+      {% if form.errors %}
+        <div class="alert alert-danger py-2 small" role="alert">Tên đăng nhập hoặc mật khẩu chưa đúng. Kiểm tra lại rồi thử lần nữa.</div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label" for="id_username">Tên đăng nhập</label>
+          <div class="input-icon">
+            <i class="bi bi-person" aria-hidden="true"></i>
+            <input class="form-control" id="id_username" name="username" autocomplete="username" required autofocus value="{{ form.username.value|default:'' }}">
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label" for="id_password">Mật khẩu</label>
+          <div class="input-icon">
+            <i class="bi bi-lock" aria-hidden="true"></i>
+            <input class="form-control" type="password" id="id_password" name="password" autocomplete="current-password" required>
+          </div>
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button class="btn btn-primary w-100 auth-submit" type="submit">Đăng nhập</button>
+      </form>
+
+      {% if DEMO_MODE %}
+        <p class="auth-demo"><i class="bi bi-info-circle" aria-hidden="true"></i> Môi trường demo, dữ liệu mẫu.</p>
+      {% endif %}
+    </div>
+  </section>
 </div>
 {% endblock %}

@@ -29,10 +29,10 @@
       <tr>
         <td><a href="{{ h.get_absolute_url }}">{{ h.deal_name }}</a>{% if h.is_demo_data %} <span class="badge text-bg-warning">Mẫu</span>{% endif %}</td>
         <td>{{ h.customer_name }}</td>
-        <td>{{ h.external_opportunity_id|default:"—" }}</td>
+        <td class="code">{{ h.external_opportunity_id|default:"—" }}</td>
         {% if can_view_finance %}<td>{{ h.committed_value|money:h.currency }}</td>{% endif %}
         <td><span class="badge text-bg-{{ h.status|badge }}">{{ h.get_status_display }}</span></td>
-        <td>{% with p=h.linked_project %}{% if p %}{{ p.code }}{% else %}—{% endif %}{% endwith %}</td>
+        <td>{% with p=h.linked_project %}{% if p %}<span class="code">{{ p.code }}</span>{% else %}—{% endif %}{% endwith %}</td>
       </tr>
     {% empty %}
       <tr><td colspan="6" class="text-muted text-center py-4">Chưa có hồ sơ bàn giao.</td></tr>

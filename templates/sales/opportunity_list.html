@@ -31,12 +31,12 @@
     <tbody>
     {% for o in opportunities %}
       <tr>
-        <td class="small">{{ o.external_id }}{% if o.is_simulated %} <span class="badge text-bg-warning">Mô phỏng</span>{% endif %}</td>
+        <td><span class="code">{{ o.external_id }}</span>{% if o.is_simulated %}<span class="cell-sub">Mô phỏng</span>{% endif %}</td>
         <td>{{ o.name }}</td>
         <td>{{ o.account|default:o.account_external_id }}</td>
         <td>{{ o.stage_name }}{% if o.is_won %} <span class="badge text-bg-success">Thắng</span>{% endif %}</td>
         {% if can_view_finance %}<td class="text-end">{{ o.amount|money:o.currency }}</td>{% endif %}
-        <td>{{ o.expected_close_date|date:"d/m/Y"|default:"—" }}</td>
+        <td class="text-nowrap">{{ o.expected_close_date|date:"d/m/Y"|default:"—" }}</td>
         <td>{{ o.owner_name|default:"—" }}</td>
       </tr>
     {% empty %}
