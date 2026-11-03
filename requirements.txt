@@ -2,3 +2,4 @@
 Django>=5.2,<5.3            # web framework (LTS)
 psycopg[binary]>=3.2,<3.3   # PostgreSQL driver
 django-environ>=0.12,<0.13  # read .env / DATABASE_URL
+requests>=2.32,<3           # HTTP client for live integration adapters (Phase 2/3)

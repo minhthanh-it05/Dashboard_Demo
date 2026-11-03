@@ -38,6 +38,15 @@ def badge(value):
     return BADGE_CLASSES.get(str(value), "secondary")
 
 
+@register.simple_tag(takes_context=True)
+def query_with(context, **params):
+    """Current query string with `params` replaced (keeps filters when paging)."""
+    query = context["request"].GET.copy()
+    for name, value in params.items():
+        query[name] = value
+    return query.urlencode()
+
+
 @register.filter
 def money(value, currency=""):
     if value is None or value == "":

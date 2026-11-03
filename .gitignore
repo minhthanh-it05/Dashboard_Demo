@@ -24,6 +24,8 @@ data/private/
 *.xlsx
 *.xls
 *.csv
+# Proposed import templates with fictional rows only
+!docs/samples/*.csv
 
 # Editors / OS
 .idea/

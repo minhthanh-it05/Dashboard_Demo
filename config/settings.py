@@ -24,6 +24,9 @@ INSTALLED_APPS = [
     "apps.projects",
     "apps.procurement",
     "apps.payments",
+    "apps.integrations",
+    "apps.sales",
+    "apps.finance",
     "apps.dashboard",
 ]
 
@@ -84,6 +87,22 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Shows a "sample data" banner on every page (CLAUDE.md §6.7, §12).
 DEMO_MODE = env("DEMO_MODE")
+
+# External integrations: "mock" (simulated data, default), "live" or "disabled".
+# Live adapters stay unusable until vendor access and schemas are confirmed.
+OPLACRM_MODE = env.str("OPLACRM_MODE", default="mock")
+OPLACRM_BASE_URL = env.str("OPLACRM_BASE_URL", default="")
+OPLACRM_API_TOKEN = env.str("OPLACRM_API_TOKEN", default="")
+
+MISA_MODE = env.str("MISA_MODE", default="mock")
+MISA_ACT_BASE_URL = env.str("MISA_ACT_BASE_URL", default="")
+MISA_APP_ID = env.str("MISA_APP_ID", default="")
+MISA_ACCESS_CODE = env.str("MISA_ACCESS_CODE", default="")
+MISA_ORG_COMPANY_CODE = env.str("MISA_ORG_COMPANY_CODE", default="")
+# No official MISA rate limit is known; keep a conservative gap between calls.
+MISA_MIN_REQUEST_INTERVAL_SECONDS = env.float("MISA_MIN_REQUEST_INTERVAL_SECONDS", default=1.0)
+
+INTEGRATION_HTTP_TIMEOUT_SECONDS = env.int("INTEGRATION_HTTP_TIMEOUT_SECONDS", default=30)
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True

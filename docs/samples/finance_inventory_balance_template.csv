@@ -1,0 +1,3 @@
+item_code,item_name,warehouse_code,quantity,unit,amount
+MAU-HH-001,Hàng hoá Mẫu Một (SAMPLE),KHO-01,25,cái,12500000
+MAU-HH-002,Hàng hoá Mẫu Hai (SAMPLE),KHO-02,3.5,m,

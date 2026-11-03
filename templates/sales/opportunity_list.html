@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Cơ hội (OplaCRM){% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-2">
+  <h1 class="h4 mb-0">Cơ hội bán hàng (OplaCRM)</h1>
+  <span class="small text-muted">
+    Đồng bộ thành công gần nhất: {{ sync_state.last_success_at|date:"d/m/Y H:i"|default:"chưa có" }}
+  </span>
+</div>
+<p class="small text-muted">Bản sao chỉ đọc của dữ liệu Sales. Cơ hội đã thắng tự tạo hồ sơ bàn giao ở trạng thái "Chờ tiếp nhận"; hệ thống không tự tạo dự án.</p>
+{% include "integrations/_simulated_notice.html" with simulated=sync_state.last_run.is_simulated %}
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-12 col-md-6">
+    <label class="visually-hidden" for="q">Tìm kiếm</label>
+    <input class="form-control" id="q" name="q" value="{{ query }}" placeholder="Tên cơ hội, khách hàng, mã">
+  </div>
+  <div class="col-6 col-md-3 d-flex align-items-center">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="won" name="won" value="1" {% if won_only %}checked{% endif %}>
+      <label class="form-check-label" for="won">Chỉ cơ hội đã thắng</label>
+    </div>
+  </div>
+  <div class="col-6 col-md-3"><button class="btn btn-outline-secondary w-100" type="submit">Lọc</button></div>
+</form>
+
+<div class="card shadow-sm"><div class="table-responsive">
+  <table class="table table-hover mb-0">
+    <thead class="table-light"><tr><th>Mã</th><th>Cơ hội</th><th>Khách hàng</th><th>Giai đoạn</th>{% if can_view_finance %}<th class="text-end">Giá trị</th>{% endif %}<th>Chốt dự kiến</th><th>Phụ trách</th></tr></thead>
+    <tbody>
+    {% for o in opportunities %}
+      <tr>
+        <td class="small">{{ o.external_id }}{% if o.is_simulated %} <span class="badge text-bg-warning">Mô phỏng</span>{% endif %}</td>
+        <td>{{ o.name }}</td>
+        <td>{{ o.account|default:o.account_external_id }}</td>
+        <td>{{ o.stage_name }}{% if o.is_won %} <span class="badge text-bg-success">Thắng</span>{% endif %}</td>
+        {% if can_view_finance %}<td class="text-end">{{ o.amount|money:o.currency }}</td>{% endif %}
+        <td>{{ o.expected_close_date|date:"d/m/Y"|default:"—" }}</td>
+        <td>{{ o.owner_name|default:"—" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="text-muted text-center py-4">
+        Chưa có dữ liệu. {% if can_view_integrations %}<a href="{% url 'integrations:status' %}">Chạy đồng bộ OplaCRM</a>{% endif %}
+      </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% include "core/_pagination.html" %}
+{% endblock %}

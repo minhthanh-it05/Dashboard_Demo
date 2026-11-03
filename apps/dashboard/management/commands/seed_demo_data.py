@@ -49,6 +49,7 @@ DEMO_USERS = [
     ("member.binh", "Bình", "Trần (Demo)", [roles.PROJECT_MEMBER]),
     ("sales.demo", "Sales", "Viewer (Demo)", [roles.SALES_VIEWER]),
     ("finance.demo", "Finance", "Viewer (Demo)", [roles.FINANCE_VIEWER, roles.PROJECT_MEMBER]),
+    ("admin.demo", "Quản trị", "Hệ thống (Demo)", [roles.SYSTEM_ADMIN]),
 ]
 
 

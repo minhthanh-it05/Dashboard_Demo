@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Lô dữ liệu tài chính{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="{% url 'finance:overview' %}">Tài chính</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Lô #{{ batch.pk }}</li>
+  </ol>
+</nav>
+<h1 class="h4 mb-1">{{ batch.get_data_kind_display }}</h1>
+{% include "finance/_batch_meta.html" with batch=batch %}
+
+<div class="card shadow-sm mt-3"><div class="card-body">
+  <p class="mb-2">Kết quả: <strong>{{ batch.get_status_display }}</strong>
+    {% if batch.is_current %}<span class="badge text-bg-success">Đang hiệu lực</span>{% endif %}
+    · {{ batch.row_count }} dòng</p>
+  {% if batch.errors %}
+    <h2 class="h6 text-danger">Lỗi kiểm tra — không có dòng nào được nhập</h2>
+    <ul class="small mb-0">{% for e in batch.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    <p class="small text-muted mt-2 mb-0">Sửa file theo mẫu trong <code>docs/samples/</code> rồi nhập lại.</p>
+  {% endif %}
+</div></div>
+{% endblock %}

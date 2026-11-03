@@ -1,8 +1,8 @@
-# Project System — Demo Phase 1
+# Project System — Demo
 
-Ứng dụng web nội bộ quản lý dự án cho Phòng Dự án (Django + PostgreSQL), phiên bản demo **Phase 1 – Core Project System**.
+Ứng dụng web nội bộ quản lý dự án cho Phòng Dự án (Django + PostgreSQL), phiên bản demo gồm **Phase 1 – Core Project System** và phần **chuẩn bị + mô phỏng** cho Phase 2 (OplaCRM) và Phase 3 (MISA).
 
-> ⚠️ Toàn bộ dữ liệu trong demo là **dữ liệu mẫu**. Phase 1 **không** kết nối OplaCRM hay MISA. Trạng thái mua hàng/thanh toán trong hệ thống **không phải** trạng thái phê duyệt chính thức trên MISA.
+> ⚠️ Toàn bộ dữ liệu trong demo là **dữ liệu mẫu / mô phỏng**. Ứng dụng **không** kết nối OplaCRM hay MISA thật: tích hợp chạy ở chế độ `mock` với dữ liệu hư cấu đóng gói sẵn. Trạng thái mua hàng/thanh toán trong hệ thống **không phải** trạng thái phê duyệt chính thức trên MISA.
 
 Bối cảnh nghiệp vụ và nguyên tắc: xem [CLAUDE.md](CLAUDE.md). Kiến trúc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Câu hỏi mở và giả định: [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md).
 
@@ -20,7 +20,18 @@ Bối cảnh nghiệp vụ và nguyên tắc: xem [CLAUDE.md](CLAUDE.md). Kiến
 | Dashboard Quản lý dự án, trang "Việc của tôi" cho thành viên | ✅ |
 | Nhật ký thay đổi (AuditLog) cho các thay đổi quan trọng | ✅ |
 | Lệnh tạo dữ liệu mẫu, test tự động | ✅ |
-| Tích hợp OplaCRM (Phase 2), MISA (Phase 3) | ❌ chưa làm — chờ cấp quyền |
+
+## Phase 2–3 (chuẩn bị + mô phỏng)
+
+| Chức năng | Trạng thái |
+|---|---|
+| Hạ tầng tích hợp: HTTP client (timeout, retry, throttle), record chuẩn hoá, `SyncRun`/`SyncState`, trang "Đồng bộ" | ✅ |
+| OplaCRM → mirror Accounts/Opportunities, incremental, idempotent; Opportunity thắng → bàn giao "Chờ tiếp nhận" | ✅ mô phỏng |
+| MISA → snapshot công nợ theo đối tượng, tồn kho theo kho | ✅ mô phỏng |
+| Client MISA ACT chỉ đọc (envelope, token, phân trang) theo ghi chú của nhóm | ✅ chưa kiểm chứng với MISA |
+| Nhập CSV tài chính theo mẫu đề xuất (`docs/samples/`), tất cả-hoặc-không, chặn file trùng | ✅ |
+| Live adapter OplaCRM / ánh xạ dữ liệu MISA thật | ⏳ chờ cấp quyền và xác nhận schema |
+| Webhook OplaCRM, callback MISA, lập lịch tự động | ⏳ chưa làm (xem ARCHITECTURE §7.5) |
 
 ## Yêu cầu
 
@@ -55,7 +66,21 @@ Mở <http://localhost:8000>. Kiểm tra tình trạng: <http://localhost:8000/h
 | `pm.demo` | PROJECT_MANAGER | Tất cả dự án, dashboard, bàn giao, số tiền |
 | `member.an`, `member.binh` | PROJECT_MEMBER | Chỉ dự án mình tham gia; cập nhật task của mình; không thấy số tiền |
 | `finance.demo` | PROJECT_MEMBER + FINANCE_VIEWER | Như thành viên, nhưng thấy các trường tài chính |
-| `sales.demo` | SALES_VIEWER | Chỉ xem hồ sơ bàn giao (không thấy giá trị bán — xem OPEN_QUESTIONS) |
+| `sales.demo` | SALES_VIEWER | Xem hồ sơ bàn giao và cơ hội OplaCRM (không thấy giá trị bán — xem OPEN_QUESTIONS) |
+| `admin.demo` | SYSTEM_ADMIN | Trang "Đồng bộ": chạy đồng bộ mô phỏng |
+
+## Đồng bộ mô phỏng (Phase 2–3)
+
+```bash
+docker compose exec web python manage.py sync_oplacrm        # Accounts + Opportunities (mock)
+docker compose exec web python manage.py sync_misa           # Công nợ + tồn kho (mock)
+docker compose exec web python manage.py import_finance_csv docs/samples/finance_debt_balance_template.csv \
+    --kind DEBT_BALANCE --as-of 2026-10-31 --period "Tháng 10/2026"
+```
+
+Hoặc đăng nhập `admin.demo` → menu **Đồng bộ** → **Chạy đồng bộ**. Kết quả xem ở các menu **Cơ hội (OplaCRM)**, **Bàn giao từ Sales** và **Tài chính**.
+
+Chế độ tích hợp đặt trong `.env`: `OPLACRM_MODE` / `MISA_MODE` = `mock` (mặc định) | `live` | `disabled`. Chế độ `live` hiện sẽ dừng với thông báo "chưa sẵn sàng" và không gọi mạng, cho tới khi adapter được hoàn thiện theo tài liệu chính thức.
 
 ## Lệnh thường dùng
 
@@ -84,9 +109,13 @@ apps/
                    Milestone, Task, ProgressUpdate, Issue; permissions.py, services.py
   procurement/     PurchaseRequest, PurchaseItem, PurchaseStatusEntry
   payments/        PaymentRequest, PaymentStatusEntry
+  integrations/    http.py, records.py, runner.py, jobs.py, modes.py, SyncRun/SyncState;
+                   oplacrm/ và misa/ (provider, mock, live, act_client); simulated_data/*.json
+  sales/           SalesAccount, SalesOpportunity; đồng bộ OplaCRM; lệnh sync_oplacrm
+  finance/         FinanceImportBatch + snapshot công nợ/tồn kho; import CSV; lệnh sync_misa, import_finance_csv
   dashboard/       Dashboard PM, Việc của tôi, lệnh seed_demo_data
 templates/         Django templates (Bootstrap 5)
-docs/              ARCHITECTURE.md, OPEN_QUESTIONS.md
+docs/              ARCHITECTURE.md, OPEN_QUESTIONS.md, samples/ (mẫu CSV đề xuất)
 ```
 
 ## Quy ước

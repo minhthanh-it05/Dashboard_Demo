@@ -12,7 +12,7 @@
 <h1 class="h4 mb-3">{{ title }}</h1>
 <div class="card shadow-sm" style="max-width: 760px;">
   <div class="card-body">
-    <form method="post" novalidate>
+    <form method="post" novalidate{% if form.is_multipart %} enctype="multipart/form-data"{% endif %}>
       {% csrf_token %}
       {% if form.non_field_errors %}
         <div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>
