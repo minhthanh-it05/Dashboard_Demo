@@ -38,6 +38,18 @@ def badge(value):
     return BADGE_CLASSES.get(str(value), "secondary")
 
 
+@register.filter
+def days_from(value, reference):
+    """Whole days from `reference` to `value` (negative = in the past).
+
+    Used instead of Django's timesince/timeuntil, whose output mixes units
+    ("1 week, 1 day") and is not fully translated to Vietnamese.
+    """
+    if not value or not reference:
+        return None
+    return (value - reference).days
+
+
 @register.simple_tag(takes_context=True)
 def query_with(context, **params):
     """Current query string with `params` replaced (keeps filters when paging)."""

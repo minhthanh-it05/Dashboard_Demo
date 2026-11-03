@@ -38,9 +38,33 @@ class DashboardTests(TestCase):
         self.login(self.pm)
         response = self.client.get(reverse("dashboard:pm"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total_projects"], 2)
-        self.assertEqual({t.title for t in response.context["overdue_tasks"]}, {"Mine overdue", "Not mine"})
-        self.assertEqual(set(response.context["at_risk_projects"]), {self.project, self.hidden})
+        kpis = response.context["kpis"]
+        self.assertEqual((kpis["active_projects"], kpis["needs_attention"]), (2, 2))
+        self.assertEqual((kpis["overdue_tasks"], kpis["open_tasks"]), (2, 2))
+        self.assertEqual({t.title for t in response.context["action_tasks"]}, {"Mine overdue", "Not mine"})
+
+        health = {row.project: row for row in response.context["project_health"]}
+        self.assertEqual(health[self.project].open_tasks, 1)
+        self.assertEqual(health[self.project].reasons, ["1 việc quá hạn"])
+
+        mix = response.context["task_mix_chart"]
+        self.assertEqual(mix["labels"], sorted([self.project.code, self.hidden.code]))
+        done = next(d for d in mix["datasets"] if d["label"] == TaskStatus.DONE.label)
+        self.assertEqual(sum(done["data"]), 1)
+
+        due = response.context["due_load_chart"]
+        counts = dict(zip(due["labels"], due["datasets"][0]["data"]))
+        self.assertEqual(counts["Quá hạn"], 2)
+        self.assertEqual(sum(counts.values()), 2)  # every open task lands in exactly one bucket
+
+    def test_critical_issues_are_listed_before_high(self):
+        from apps.projects.models import ProjectIssue, Severity
+
+        ProjectIssue.objects.create(project=self.project, title="High", severity=Severity.HIGH, reported_by=self.pm)
+        ProjectIssue.objects.create(project=self.project, title="Critical", severity=Severity.CRITICAL, reported_by=self.pm)
+        self.login(self.pm)
+        issues = self.client.get(reverse("dashboard:pm")).context["action_issues"]
+        self.assertEqual([i.title for i in issues], ["Critical", "High"])
 
     def test_member_cannot_open_pm_dashboard(self):
         self.login(self.member)

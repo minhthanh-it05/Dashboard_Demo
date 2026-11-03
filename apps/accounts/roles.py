@@ -16,6 +16,14 @@ SYSTEM_ADMIN = "SYSTEM_ADMIN"
 
 ALL_ROLES = (PROJECT_MANAGER, PROJECT_MEMBER, SALES_VIEWER, FINANCE_VIEWER, SYSTEM_ADMIN)
 
+ROLE_LABELS = {
+    PROJECT_MANAGER: "Quản lý dự án",
+    PROJECT_MEMBER: "Thành viên dự án",
+    SALES_VIEWER: "Xem dữ liệu Sales",
+    FINANCE_VIEWER: "Tài chính",
+    SYSTEM_ADMIN: "Quản trị hệ thống",
+}
+
 
 def role_names(user):
     if not user.is_authenticated:
@@ -23,6 +31,13 @@ def role_names(user):
     if not hasattr(user, "_role_names"):
         user._role_names = set(user.groups.values_list("name", flat=True))
     return user._role_names
+
+
+def role_display(user):
+    if user.is_superuser:
+        return "Quản trị (superuser)"
+    labels = [ROLE_LABELS[role] for role in ALL_ROLES if role in role_names(user)]
+    return ", ".join(labels) or "Chưa được phân quyền"
 
 
 def has_role(user, role):

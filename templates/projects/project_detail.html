@@ -105,9 +105,9 @@
         <tbody>
         {% for m in milestones %}
           <tr><td>{{ m.sort_order }}</td><td>{{ m.name }}</td>
-            <td>{{ m.due_date|date:"d/m/Y" }}{% if m.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</td>
+            <td class="text-nowrap">{{ m.due_date|date:"d/m/Y" }}{% if m.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</td>
             <td><span class="badge text-bg-{{ m.status|badge }}">{{ m.get_status_display }}</span></td>
-            <td>{{ m.completed_date|date:"d/m/Y"|default:"—" }}</td>
+            <td class="text-nowrap">{{ m.completed_date|date:"d/m/Y"|default:"—" }}</td>
             <td class="text-end">{% if can_manage %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'projects:milestone_update' project.pk m.pk %}">Sửa</a>{% endif %}</td></tr>
         {% empty %}
           <tr><td colspan="6" class="text-muted text-center py-3">Chưa có mốc tiến độ.</td></tr>
@@ -129,7 +129,7 @@
             <td>{{ t.title }}</td>
             <td>{{ t.milestone|default:"—" }}</td>
             <td>{{ t.assignee|default:"—" }}</td>
-            <td>{{ t.due_date|date:"d/m/Y"|default:"—" }}{% if t.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</td>
+            <td class="text-nowrap">{{ t.due_date|date:"d/m/Y"|default:"—" }}{% if t.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</td>
             <td><span class="badge text-bg-{{ t.priority|badge }}">{{ t.get_priority_display }}</span></td>
             <td><span class="badge text-bg-{{ t.status|badge }}">{{ t.get_status_display }}</span></td>
             <td class="text-end text-nowrap">
@@ -218,7 +218,7 @@
         <thead class="table-light"><tr><th>Số HĐ</th><th>Tên</th><th>Trạng thái</th><th>Ngày ký</th>{% if can_view_finance %}<th>Giá trị</th>{% endif %}<th>Tài liệu</th><th></th></tr></thead>
         <tbody>
         {% for c in contracts %}
-          <tr><td>{{ c.contract_number|default:"—" }}</td><td>{{ c.title }}</td><td>{{ c.get_status_display }}</td><td>{{ c.signed_date|date:"d/m/Y"|default:"—" }}</td>
+          <tr><td class="code">{{ c.contract_number|default:"—" }}</td><td>{{ c.title }}</td><td>{{ c.get_status_display }}</td><td class="text-nowrap">{{ c.signed_date|date:"d/m/Y"|default:"—" }}</td>
             {% if can_view_finance %}<td>{{ c.contract_value|money:c.currency }}</td>{% endif %}
             <td>{{ c.document|default:"—" }}</td>
             <td class="text-end">{% if can_manage %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'projects:contract_update' project.pk c.pk %}">Sửa</a>{% endif %}</td></tr>
@@ -258,7 +258,7 @@
         <tbody>
         {% for pr in purchase_requests %}
           {% with s=pr.latest_status %}
-          <tr><td><a href="{{ pr.get_absolute_url }}">{{ pr.request_number }}</a></td><td>{{ pr.title }}</td><td>{{ pr.supplier_name|default:"—" }}</td><td>{{ pr.request_date|date:"d/m/Y" }}</td>
+          <tr><td><a class="code" href="{{ pr.get_absolute_url }}">{{ pr.request_number }}</a></td><td>{{ pr.title }}</td><td>{{ pr.supplier_name|default:"—" }}</td><td class="text-nowrap">{{ pr.request_date|date:"d/m/Y" }}</td>
             {% if can_view_finance %}<td>{{ pr.estimated_total|money:pr.currency }}</td>{% endif %}
             <td>{% if s %}{{ s.status_label }} <div class="small text-muted">{{ s.get_status_source_display }} · {{ s.recorded_at|date:"d/m/Y" }}</div>{% else %}<span class="text-muted">Chưa ghi nhận</span>{% endif %}
               {% if pr.tracking_closed %}<span class="badge text-bg-dark">Đã kết thúc theo dõi</span>{% endif %}</td></tr>
@@ -281,7 +281,7 @@
         <tbody>
         {% for pay in payment_requests %}
           {% with s=pay.latest_status %}
-          <tr><td><a href="{{ pay.get_absolute_url }}">{{ pay.request_number }}</a></td><td>{{ pay.payee_name }}</td><td>{{ pay.reason|truncatechars:60 }}</td><td>{{ pay.request_date|date:"d/m/Y" }}</td>
+          <tr><td><a class="code" href="{{ pay.get_absolute_url }}">{{ pay.request_number }}</a></td><td>{{ pay.payee_name }}</td><td>{{ pay.reason|truncatechars:60 }}</td><td class="text-nowrap">{{ pay.request_date|date:"d/m/Y" }}</td>
             {% if can_view_finance %}<td>{{ pay.amount|money:pay.currency }}</td>{% endif %}
             <td>{% if s %}{{ s.status_label }} <div class="small text-muted">{{ s.get_status_source_display }} · {{ s.recorded_at|date:"d/m/Y" }}</div>{% else %}<span class="text-muted">Chưa ghi nhận</span>{% endif %}
               {% if pay.tracking_closed %}<span class="badge text-bg-dark">Đã kết thúc theo dõi</span>{% endif %}</td></tr>

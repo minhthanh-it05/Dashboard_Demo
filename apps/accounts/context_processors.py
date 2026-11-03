@@ -6,6 +6,7 @@ from .roles import (
     can_view_integrations,
     can_view_sales_data,
     is_project_manager,
+    role_display,
 )
 
 
@@ -21,4 +22,5 @@ def roles(request):
         "can_view_integrations": can_view_integrations(user),
         "can_manage_integrations": can_manage_integrations(user),
         "can_import_finance": can_import_finance(user),
+        "role_display": role_display(user) if user.is_authenticated else "",
     }

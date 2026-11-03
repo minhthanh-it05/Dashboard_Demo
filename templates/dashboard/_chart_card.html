@@ -1,0 +1,29 @@
+{# Params: title, source (json_script id), type (bar|stacked-bar|doughnut|line), note?, size? (sm|md|lg), horizontal?, max?, unit?, center? #}
+<section class="card chart-card h-100" aria-labelledby="{{ source }}-title">
+  <div class="card-body">
+    <header class="chart-head">
+      <h2 class="card-title" id="{{ source }}-title">{{ title }}</h2>
+      {% if note %}<p class="chart-note">{{ note }}</p>{% endif %}
+    </header>
+    {% if type == "doughnut" %}
+      {# The legend table carries every value and share, so no separate table view. #}
+      <div class="donut">
+        <div class="chart-box donut-box">
+          <canvas data-chart="doughnut" data-source="{{ source }}" role="img" aria-label="{{ title }}"
+            {% if center %}data-center-label="{{ center }}"{% endif %}></canvas>
+        </div>
+        <table class="chart-legend" data-legend-for="{{ source }}">
+          <caption class="visually-hidden">{{ title }}</caption>
+        </table>
+      </div>
+    {% else %}
+      <div class="chart-box chart-box--{{ size|default:'md' }}">
+        <canvas data-chart="{{ type }}" data-source="{{ source }}" role="img" aria-label="{{ title }}"
+          {% if horizontal %}data-horizontal{% endif %}
+          {% if max %}data-max="{{ max }}"{% endif %}
+          {% if unit %}data-unit="{{ unit }}"{% endif %}></canvas>
+      </div>
+      <details class="chart-table" data-source="{{ source }}"></details>
+    {% endif %}
+  </div>
+</section>

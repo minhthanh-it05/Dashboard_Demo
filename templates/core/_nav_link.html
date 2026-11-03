@@ -1,0 +1,6 @@
+{# Params: section, url_name, icon, label. Compares with nav_section from the context processor. #}
+<li class="nav-item">
+  <a class="nav-link{% if nav_section == section %} active{% endif %}" href="{% url url_name %}"{% if nav_section == section %} aria-current="page"{% endif %}>
+    <i class="bi bi-{{ icon }}" aria-hidden="true"></i><span>{{ label }}</span>
+  </a>
+</li>

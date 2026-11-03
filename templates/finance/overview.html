@@ -55,7 +55,7 @@
     {% for b in recent_batches %}
       <tr><td class="text-nowrap">{{ b.imported_at|date:"d/m/Y H:i" }}</td><td>{{ b.get_data_kind_display }}</td>
         <td>{{ b.get_source_system_display }}{% if b.is_simulated %} <span class="badge text-bg-warning">Mô phỏng</span>{% endif %}</td>
-        <td>{{ b.as_of_date|date:"d/m/Y" }}</td>
+        <td class="text-nowrap">{{ b.as_of_date|date:"d/m/Y" }}</td>
         <td>{{ b.get_status_display }}{% if b.is_current %} <span class="badge text-bg-success">Đang hiệu lực</span>{% endif %}</td>
         <td class="text-end">{{ b.row_count }}</td>
         <td class="text-end"><a href="{% url 'finance:batch_detail' b.pk %}">Chi tiết</a></td></tr>

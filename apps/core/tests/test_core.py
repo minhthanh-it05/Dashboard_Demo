@@ -29,6 +29,17 @@ class AuditHelperTests(TestCase):
         self.assertEqual(log.object_id, str(user.pk))
 
 
+class DaysFromFilterTests(TestCase):
+    def test_whole_days_in_both_directions(self):
+        from datetime import date
+
+        from apps.core.templatetags.ui import days_from
+
+        self.assertEqual(days_from(date(2026, 11, 11), date(2026, 11, 3)), 8)
+        self.assertEqual(days_from(date(2026, 11, 3), date(2026, 11, 11)), -8)
+        self.assertIsNone(days_from(None, date(2026, 11, 3)))
+
+
 class MoneyFilterTests(TestCase):
     def test_vnd_has_no_decimals(self):
         self.assertEqual(money(Decimal("1250000"), "VND"), "1.250.000 VND")
