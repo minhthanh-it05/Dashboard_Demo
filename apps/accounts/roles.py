@@ -1,0 +1,52 @@
+"""Role names and role checks.
+
+Role names follow CLAUDE.md §6.1 and are still proposals; each role is a
+Django Group. The policy below is the Phase 1 assumption recorded in
+docs/OPEN_QUESTIONS.md — change it here, not in views.
+"""
+
+from django.contrib.auth import get_user_model
+from django.db.models import Q
+
+PROJECT_MANAGER = "PROJECT_MANAGER"
+PROJECT_MEMBER = "PROJECT_MEMBER"
+SALES_VIEWER = "SALES_VIEWER"
+FINANCE_VIEWER = "FINANCE_VIEWER"
+SYSTEM_ADMIN = "SYSTEM_ADMIN"
+
+ALL_ROLES = (PROJECT_MANAGER, PROJECT_MEMBER, SALES_VIEWER, FINANCE_VIEWER, SYSTEM_ADMIN)
+
+
+def role_names(user):
+    if not user.is_authenticated:
+        return set()
+    if not hasattr(user, "_role_names"):
+        user._role_names = set(user.groups.values_list("name", flat=True))
+    return user._role_names
+
+
+def has_role(user, role):
+    return role in role_names(user)
+
+
+def is_project_manager(user):
+    """Project managers see and manage every project (assumption)."""
+    return user.is_authenticated and (user.is_superuser or has_role(user, PROJECT_MANAGER))
+
+
+def can_view_finance(user):
+    """Money fields: PMs and FINANCE_VIEWER only; hidden from members (assumption)."""
+    return is_project_manager(user) or has_role(user, FINANCE_VIEWER)
+
+
+def can_view_handovers(user):
+    return is_project_manager(user) or has_role(user, SALES_VIEWER)
+
+
+def project_manager_users():
+    return (
+        get_user_model()
+        .objects.filter(is_active=True)
+        .filter(Q(groups__name=PROJECT_MANAGER) | Q(is_superuser=True))
+        .distinct()
+    )

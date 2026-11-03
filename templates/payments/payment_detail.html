@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ payment.request_number }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="{% url 'projects:list' %}">Dự án</a></li>
+    <li class="breadcrumb-item"><a href="{{ project.get_absolute_url }}#payments">{{ project.code }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ payment.request_number }}</li>
+  </ol>
+</nav>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <h1 class="h4 mb-1">Đề nghị thanh toán {{ payment.request_number }}{% if payment.is_demo_data %} <span class="badge text-bg-warning align-middle">Dữ liệu mẫu</span>{% endif %}</h1>
+    <div class="text-muted small">Người đề nghị: {{ payment.requester }} · {{ payment.request_date|date:"d/m/Y" }}</div>
+  </div>
+  {% if is_pm %}<a class="btn btn-outline-primary btn-sm" href="{% url 'payments:update' project.pk payment.pk %}">Sửa đề nghị</a>{% endif %}
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm"><div class="card-body">
+      <dl class="row small mb-0">
+        <dt class="col-5">Người nhận</dt><dd class="col-7">{{ payment.payee_name }}</dd>
+        {% if can_view_finance %}<dt class="col-5">Số tiền</dt><dd class="col-7">{{ payment.amount|money:payment.currency }}</dd>{% endif %}
+        <dt class="col-5">Lý do / mốc</dt><dd class="col-7">{{ payment.reason|linebreaksbr }}</dd>
+        <dt class="col-5">Đề nghị mua hàng</dt><dd class="col-7">{% if payment.purchase_request %}<a href="{{ payment.purchase_request.get_absolute_url }}">{{ payment.purchase_request.request_number }}</a>{% else %}—{% endif %}</dd>
+        <dt class="col-5">Theo dõi</dt><dd class="col-7">{% if payment.tracking_closed %}Đã kết thúc{% else %}Đang theo dõi{% endif %}</dd>
+      </dl>
+    </div></div>
+  </div>
+  <div class="col-12 col-lg-6">
+    {% if is_pm %}{% url 'payments:status_create' project.pk payment.pk as add_url %}{% endif %}
+    {% include "core/_status_history.html" with entries=payment.status_entries.all add_url=add_url %}
+  </div>
+</div>
+{% endblock %}

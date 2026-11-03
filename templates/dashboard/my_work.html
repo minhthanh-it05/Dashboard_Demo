@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Việc của tôi{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-3">
+  <h1 class="h4 mb-0">Việc của tôi</h1>
+  <span class="text-muted small">Ngày {{ today|date:"d/m/Y" }}</span>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body">
+    <div class="small text-muted">Việc đang mở</div><div class="fs-4 fw-semibold">{{ my_tasks|length }}</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body">
+    <div class="small text-muted">Quá hạn</div><div class="fs-4 fw-semibold{% if overdue_tasks %} text-danger{% endif %}">{{ overdue_tasks|length }}</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body">
+    <div class="small text-muted">Đến hạn {{ upcoming_task_days }} ngày tới</div><div class="fs-4 fw-semibold">{{ upcoming_tasks|length }}</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body">
+    <div class="small text-muted">Vấn đề giao cho tôi</div><div class="fs-4 fw-semibold">{{ my_issues|length }}</div></div></div></div>
+</div>
+
+{% if stale_tasks %}
+<div class="alert alert-warning small">
+  <strong>Cần cập nhật tiến độ</strong> <span class="badge text-bg-light border fw-normal">quy tắc demo</span>: công việc đang làm nhưng chưa có cập nhật trong {{ stale_progress_days }} ngày qua —
+  {% for t in stale_tasks %}<a href="{% url 'projects:task_status' t.project.pk t.pk %}">{{ t.title }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.
+</div>
+{% endif %}
+
+<div class="card shadow-sm mb-3"><div class="card-body">
+  <h2 class="h6">Công việc đang mở của tôi</h2>
+  <div class="table-responsive"><table class="table table-sm mb-0">
+    <thead><tr><th>Công việc</th><th>Dự án</th><th>Hạn</th><th>Trạng thái</th><th></th></tr></thead>
+    <tbody>
+    {% for t in my_tasks %}
+      <tr><td>{{ t.title }}{% if t.milestone %}<div class="small text-muted">{{ t.milestone }}</div>{% endif %}</td>
+        <td><a href="{{ t.project.get_absolute_url }}#plan">{{ t.project.code }}</a></td>
+        <td>{{ t.due_date|date:"d/m/Y"|default:"—" }}{% if t.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</td>
+        <td><span class="badge text-bg-{{ t.status|badge }}">{{ t.get_status_display }}</span></td>
+        <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'projects:task_status' t.project.pk t.pk %}">Cập nhật trạng thái</a></td></tr>
+    {% empty %}
+      <tr><td colspan="5" class="text-muted text-center py-3">Bạn không có công việc nào đang mở.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div></div>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Vấn đề / rủi ro giao cho tôi</h2>
+      <ul class="list-unstyled small mb-0">
+        {% for i in my_issues %}
+          <li class="border-bottom py-1"><a href="{% url 'projects:issue_update' i.project.pk i.pk %}">{{ i.title }}</a> · {{ i.project.code }}
+            <span class="badge text-bg-{{ i.severity|badge }}">{{ i.get_severity_display }}</span></li>
+        {% empty %}
+          <li class="text-muted text-center py-3">Không có vấn đề nào giao cho bạn.</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Dự án của tôi</h2>
+      <ul class="list-unstyled small mb-0">
+        {% for p in my_projects %}
+          <li class="border-bottom py-1"><a href="{{ p.get_absolute_url }}">{{ p.code }}</a> {{ p.name }}
+            <span class="badge text-bg-{{ p.status|badge }}">{{ p.get_status_display }}</span>
+            {% if p.latest_percent is not None %}<span class="text-muted">· {{ p.latest_percent }}% (báo cáo)</span>{% endif %}</li>
+        {% empty %}
+          <li class="text-muted text-center py-3">Bạn chưa được thêm vào dự án nào.{% if can_view_handovers %} <a href="{% url 'projects:handover_list' %}">Xem bàn giao từ Sales</a>{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

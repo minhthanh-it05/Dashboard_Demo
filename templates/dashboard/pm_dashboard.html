@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-3">
+  <h1 class="h4 mb-0">Dashboard quản lý dự án</h1>
+  <span class="text-muted small">Ngày {{ today|date:"d/m/Y" }} · {{ total_projects }} dự án</span>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-12 col-lg-5">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Dự án theo trạng thái</h2>
+      <div style="position: relative; height: 220px;"><canvas id="statusChart" aria-label="Biểu đồ dự án theo trạng thái" role="img"></canvas></div>
+      <table class="table table-sm small mt-2 mb-0">
+        {% for value, label, n in status_rows %}
+          <tr><td><a href="{% url 'projects:list' %}?status={{ value }}">{{ label }}</a></td><td class="text-end">{{ n }}</td></tr>
+        {% endfor %}
+      </table>
+    </div></div>
+  </div>
+  <div class="col-12 col-lg-7">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Dự án cần chú ý <span class="badge text-bg-light border fw-normal">quy tắc demo</span></h2>
+      <p class="small text-muted">Dự án đang mở có ít nhất một dấu hiệu: quá ngày kết thúc kế hoạch, có công việc quá hạn, hoặc có vấn đề mức Cao/Nghiêm trọng đang mở. Quy tắc này chưa được công ty xác nhận.</p>
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>Dự án</th><th>Trạng thái</th><th>Kết thúc (KH)</th><th>% báo cáo</th></tr></thead>
+        <tbody>
+        {% for p in at_risk_projects %}
+          <tr><td><a href="{{ p.get_absolute_url }}">{{ p.code }}</a> {{ p.name }}</td>
+            <td><span class="badge text-bg-{{ p.status|badge }}">{{ p.get_status_display }}</span></td>
+            <td>{{ p.planned_end_date|date:"d/m/Y"|default:"—" }}{% if p.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</td>
+            <td>{% if p.latest_percent is not None %}{{ p.latest_percent }}%{% else %}—{% endif %}</td></tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-muted text-center py-3">Không có dự án nào cần chú ý.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-12 col-xl-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Công việc quá hạn</h2>
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>Công việc</th><th>Dự án</th><th>Người thực hiện</th><th>Hạn</th></tr></thead>
+        <tbody>
+        {% for t in overdue_tasks %}
+          <tr><td>{{ t.title }} <span class="badge text-bg-{{ t.status|badge }}">{{ t.get_status_display }}</span></td>
+            <td><a href="{{ t.project.get_absolute_url }}#plan">{{ t.project.code }}</a></td>
+            <td>{{ t.assignee|default:"—" }}</td><td class="text-danger">{{ t.due_date|date:"d/m/Y" }}</td></tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-muted text-center py-3">Không có công việc quá hạn.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </div></div>
+  </div>
+  <div class="col-12 col-xl-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Mốc sắp đến hạn ({{ upcoming_milestone_days }} ngày tới)</h2>
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>Mốc</th><th>Dự án</th><th>Hạn</th></tr></thead>
+        <tbody>
+        {% for m in upcoming_milestones %}
+          <tr><td>{{ m.name }}</td><td><a href="{{ m.project.get_absolute_url }}#plan">{{ m.project.code }}</a></td><td>{{ m.due_date|date:"d/m/Y" }}</td></tr>
+        {% empty %}
+          <tr><td colspan="3" class="text-muted text-center py-3">Không có mốc nào trong {{ upcoming_milestone_days }} ngày tới.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-12 col-xl-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Vấn đề / rủi ro đang mở</h2>
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>Tiêu đề</th><th>Dự án</th><th>Mức độ</th><th>Người xử lý</th></tr></thead>
+        <tbody>
+        {% for i in open_issues %}
+          <tr><td>{{ i.title }}</td><td><a href="{{ i.project.get_absolute_url }}#issues">{{ i.project.code }}</a></td>
+            <td><span class="badge text-bg-{{ i.severity|badge }}">{{ i.get_severity_display }}</span></td><td>{{ i.assignee|default:"—" }}</td></tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-muted text-center py-3">Không có vấn đề đang mở.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </div></div>
+  </div>
+  <div class="col-12 col-xl-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Cập nhật tiến độ gần đây</h2>
+      <ul class="list-unstyled small mb-0">
+        {% for u in recent_updates %}
+          <li class="border-bottom py-1">
+            <a href="{{ u.project.get_absolute_url }}#progress">{{ u.project.code }}</a> · <strong>{{ u.author }}</strong>
+            <span class="text-muted">{{ u.created_at|date:"d/m H:i" }}</span>{% if u.percent is not None %} · {{ u.percent }}%{% endif %}
+            <div>{{ u.note|truncatechars:120 }}</div>
+          </li>
+        {% empty %}
+          <li class="text-muted text-center py-3">Chưa có cập nhật.</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-12 col-xl-4">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Bàn giao đang chờ xử lý</h2>
+      <ul class="list-unstyled small mb-0">
+        {% for h in pending_handovers %}
+          <li class="border-bottom py-1"><a href="{{ h.get_absolute_url }}">{{ h.deal_name }}</a>
+            <span class="badge text-bg-{{ h.status|badge }}">{{ h.get_status_display }}</span></li>
+        {% empty %}
+          <li class="text-muted text-center py-3">Không có bàn giao đang chờ.</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Đề nghị mua hàng đang theo dõi</h2>
+      <p class="small text-muted mb-2">Sắp xếp theo lần ghi nhận trạng thái cũ nhất trước.</p>
+      {% include "dashboard/_tracked_list.html" with rows=open_purchases %}
+    </div></div>
+  </div>
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6">Đề nghị thanh toán đang theo dõi</h2>
+      <p class="small text-muted mb-2">Sắp xếp theo lần ghi nhận trạng thái cũ nhất trước.</p>
+      {% include "dashboard/_tracked_list.html" with rows=open_payments %}
+    </div></div>
+  </div>
+</div>
+
+<div class="card shadow-sm"><div class="card-body small text-muted">
+  <strong>Tài chính:</strong> chưa có nguồn số liệu tài chính đáng tin cậy (MISA chưa được kết nối – Phase 3), nên dashboard chưa hiển thị tổng hợp tài chính.
+</div></div>
+
+{{ chart_data|json_script:"status-chart-data" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+  (function () {
+    var data = JSON.parse(document.getElementById('status-chart-data').textContent);
+    new Chart(document.getElementById('statusChart'), {
+      type: 'bar',
+      data: { labels: data.labels, datasets: [{ label: 'Số dự án', data: data.counts, backgroundColor: '#0d6efd' }] },
+      options: {
+        indexAxis: 'y', maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

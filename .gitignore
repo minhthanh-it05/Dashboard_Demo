@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Django
+staticfiles/
+media/
+*.sqlite3
+
+# Secrets & local config — never commit
+.env
+.env.*
+!.env.example
+
+# Business files / exports must not be committed (CLAUDE.md §8)
+uploads/
+data/private/
+*.xlsx
+*.xls
+*.csv
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

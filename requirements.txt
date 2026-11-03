@@ -1,0 +1,4 @@
+# Keep this list small; explain any new dependency in the PR (CLAUDE.md §11.7).
+Django>=5.2,<5.3            # web framework (LTS)
+psycopg[binary]>=3.2,<3.3   # PostgreSQL driver
+django-environ>=0.12,<0.13  # read .env / DATABASE_URL

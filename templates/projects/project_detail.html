@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ project.code }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="{% url 'projects:list' %}">Dự án</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ project.code }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <h1 class="h4 mb-1">{{ project.name }}
+      {% if project.is_demo_data %}<span class="badge text-bg-warning align-middle">Dữ liệu mẫu</span>{% endif %}
+    </h1>
+    <div class="text-muted small">{{ project.code }} · {{ project.customer_name }} · Quản lý: {{ project.manager }}</div>
+  </div>
+  <div class="d-flex gap-2 align-items-center">
+    <span class="badge fs-6 text-bg-{{ project.status|badge }}">{{ project.get_status_display }}</span>
+    {% if can_manage %}<a class="btn btn-outline-primary btn-sm" href="{% url 'projects:update' project.pk %}">Sửa dự án</a>{% endif %}
+  </div>
+</div>
+
+<ul class="nav nav-tabs tab-scroll mb-3" role="tablist">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Tổng quan</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab">Thành viên ({{ members|length }})</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab">Kế hoạch ({{ tasks|length }})</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#progress" type="button" role="tab">Tiến độ</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#issues" type="button" role="tab">Vấn đề / rủi ro ({{ issues|length }})</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#records" type="button" role="tab">Kickoff · Hợp đồng · Tài liệu</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#purchases" type="button" role="tab">Mua hàng ({{ purchase_requests|length }})</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">Thanh toán ({{ payment_requests|length }})</button></li>
+</ul>
+
+<div class="tab-content">
+
+  {# ------------------------------------------------------------ Overview #}
+  <div class="tab-pane fade show active" id="overview" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-12 col-lg-6">
+        <div class="card shadow-sm h-100"><div class="card-body">
+          <h2 class="h6 text-muted">Kế hoạch thực hiện (Project)</h2>
+          <dl class="row mb-0 small">
+            <dt class="col-5">Bắt đầu (KH)</dt><dd class="col-7">{{ project.planned_start_date|date:"d/m/Y"|default:"—" }}</dd>
+            <dt class="col-5">Kết thúc (KH)</dt><dd class="col-7">{{ project.planned_end_date|date:"d/m/Y"|default:"—" }}{% if project.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</dd>
+            <dt class="col-5">% tiến độ báo cáo</dt>
+            <dd class="col-7">{% if project.latest_percent is not None %}{{ project.latest_percent }}%{% else %}Chưa có{% endif %}
+              <div class="form-text">Số % gần nhất do người dùng báo cáo. Chưa áp dụng công thức tính tiến độ.</div></dd>
+            <dt class="col-5">Mô tả</dt><dd class="col-7">{{ project.description|linebreaksbr|default:"—" }}</dd>
+          </dl>
+        </div></div>
+      </div>
+      <div class="col-12 col-lg-6">
+        <div class="card shadow-sm h-100"><div class="card-body">
+          <h2 class="h6 text-muted">Cam kết từ Sales (bàn giao)</h2>
+          {% if project.handover %}
+            {% with h=project.handover %}
+            <dl class="row mb-0 small">
+              <dt class="col-5">Thương vụ</dt><dd class="col-7">{% if can_view_handovers %}<a href="{{ h.get_absolute_url }}">{{ h.deal_name }}</a>{% else %}{{ h.deal_name }}{% endif %}</dd>
+              <dt class="col-5">Mã Opportunity</dt><dd class="col-7">{{ h.external_opportunity_id|default:"—" }} <span class="text-muted">({{ h.get_source_system_display }})</span></dd>
+              <dt class="col-5">Thời gian cam kết</dt><dd class="col-7">{{ h.committed_start_date|date:"d/m/Y"|default:"?" }} → {{ h.committed_end_date|date:"d/m/Y"|default:"?" }}</dd>
+              {% if can_view_finance %}<dt class="col-5">Giá trị bán</dt><dd class="col-7">{{ h.committed_value|money:h.currency }}</dd>{% endif %}
+              <dt class="col-5">Phạm vi</dt><dd class="col-7">{{ h.committed_scope|linebreaksbr|default:"—" }}</dd>
+            </dl>
+            {% endwith %}
+          {% else %}
+            <p class="text-muted small mb-0">Dự án không gắn với hồ sơ bàn giao nào.</p>
+          {% endif %}
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  {# ------------------------------------------------------------- Members #}
+  <div class="tab-pane fade" id="members" role="tabpanel">
+    {% if can_manage %}<a class="btn btn-sm btn-primary mb-2" href="{% url 'projects:member_add' project.pk %}">Thêm thành viên</a>{% endif %}
+    <div class="card shadow-sm"><div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light"><tr><th>Thành viên</th><th>Vai trò trong dự án</th><th></th></tr></thead>
+        <tbody>
+        {% for m in members %}
+          <tr><td>{{ m.user }}</td><td>{{ m.project_role|default:"—" }}</td>
+            <td class="text-end">{% if can_manage %}
+              <form method="post" action="{% url 'projects:member_remove' project.pk m.pk %}" onsubmit="return confirm('Xoá {{ m.user|escapejs }} khỏi dự án {{ project.code }}?');">
+                {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Xoá khỏi dự án</button>
+              </form>{% endif %}</td></tr>
+        {% empty %}
+          <tr><td colspan="3" class="text-muted text-center py-3">Chưa có thành viên.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+
+  {# ---------------------------------------------------------------- Plan #}
+  <div class="tab-pane fade" id="plan" role="tabpanel">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="h6 mb-0">Mốc tiến độ</h2>
+      {% if can_manage %}<a class="btn btn-sm btn-primary" href="{% url 'projects:milestone_create' project.pk %}">Thêm mốc</a>{% endif %}
+    </div>
+    <div class="card shadow-sm mb-4"><div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light"><tr><th>#</th><th>Mốc</th><th>Hạn</th><th>Trạng thái</th><th>Hoàn thành</th><th></th></tr></thead>
+        <tbody>
+        {% for m in milestones %}
+          <tr><td>{{ m.sort_order }}</td><td>{{ m.name }}</td>
+            <td>{{ m.due_date|date:"d/m/Y" }}{% if m.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</td>
+            <td><span class="badge text-bg-{{ m.status|badge }}">{{ m.get_status_display }}</span></td>
+            <td>{{ m.completed_date|date:"d/m/Y"|default:"—" }}</td>
+            <td class="text-end">{% if can_manage %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'projects:milestone_update' project.pk m.pk %}">Sửa</a>{% endif %}</td></tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-muted text-center py-3">Chưa có mốc tiến độ.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="h6 mb-0">Công việc</h2>
+      {% if can_manage %}<a class="btn btn-sm btn-primary" href="{% url 'projects:task_create' project.pk %}">Thêm công việc</a>{% endif %}
+    </div>
+    <div class="card shadow-sm"><div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light"><tr><th>Công việc</th><th>Mốc</th><th>Người thực hiện</th><th>Hạn</th><th>Ưu tiên</th><th>Trạng thái</th><th></th></tr></thead>
+        <tbody>
+        {% for t in tasks %}
+          <tr{% if t.pk in my_task_ids %} class="table-info"{% endif %}>
+            <td>{{ t.title }}</td>
+            <td>{{ t.milestone|default:"—" }}</td>
+            <td>{{ t.assignee|default:"—" }}</td>
+            <td>{{ t.due_date|date:"d/m/Y"|default:"—" }}{% if t.is_overdue %} <span class="badge text-bg-danger">Quá hạn</span>{% endif %}</td>
+            <td><span class="badge text-bg-{{ t.priority|badge }}">{{ t.get_priority_display }}</span></td>
+            <td><span class="badge text-bg-{{ t.status|badge }}">{{ t.get_status_display }}</span></td>
+            <td class="text-end text-nowrap">
+              {% if can_manage or t.pk in my_task_ids %}<a class="btn btn-sm btn-outline-primary" href="{% url 'projects:task_status' project.pk t.pk %}">Cập nhật trạng thái</a>{% endif %}
+              {% if can_manage %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'projects:task_update' project.pk t.pk %}">Sửa</a>{% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-muted text-center py-3">Chưa có công việc.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+
+  {# ------------------------------------------------------------ Progress #}
+  <div class="tab-pane fade" id="progress" role="tabpanel">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="h6 mb-0">Lịch sử cập nhật tiến độ <span class="text-muted fw-normal small">(30 mục gần nhất, không sửa/xoá được)</span></h2>
+      <a class="btn btn-sm btn-primary" href="{% url 'projects:progress_create' project.pk %}">Gửi cập nhật</a>
+    </div>
+    <div class="list-group shadow-sm">
+      {% for u in progress_updates %}
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between flex-wrap gap-2 small text-muted">
+            <span><strong class="text-body">{{ u.author }}</strong> · {{ u.task|default:"Cập nhật chung của dự án" }}</span>
+            <span>{{ u.created_at|date:"d/m/Y H:i" }}</span>
+          </div>
+          <div>{{ u.note|linebreaksbr }}</div>
+          <div class="small">
+            {% if u.status_to %}<span class="text-muted">{{ u.status_from_label }} → {{ u.status_to_label }}</span>{% endif %}
+            {% if u.percent is not None %}<span class="badge text-bg-light border">{{ u.percent }}%</span>{% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="list-group-item text-muted text-center py-3">Chưa có cập nhật tiến độ.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# -------------------------------------------------------------- Issues #}
+  <div class="tab-pane fade" id="issues" role="tabpanel">
+    <a class="btn btn-sm btn-primary mb-2" href="{% url 'projects:issue_create' project.pk %}">Báo cáo vấn đề / rủi ro</a>
+    <div class="card shadow-sm"><div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light"><tr><th>Loại</th><th>Tiêu đề</th><th>Mức độ</th><th>Trạng thái</th><th>Người xử lý</th><th>Người báo cáo</th><th></th></tr></thead>
+        <tbody>
+        {% for i in issues %}
+          <tr><td>{{ i.get_kind_display }}</td><td>{{ i.title }}{% if i.task %}<div class="small text-muted">{{ i.task }}</div>{% endif %}</td>
+            <td><span class="badge text-bg-{{ i.severity|badge }}">{{ i.get_severity_display }}</span></td>
+            <td><span class="badge text-bg-{{ i.status|badge }}">{{ i.get_status_display }}</span></td>
+            <td>{{ i.assignee|default:"—" }}</td><td>{{ i.reported_by }}</td>
+            <td class="text-end">{% if can_manage or i.assignee_id == user.pk or i.reported_by_id == user.pk %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'projects:issue_update' project.pk i.pk %}">Cập nhật</a>{% endif %}</td></tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-muted text-center py-3">Chưa có vấn đề hay rủi ro nào.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+
+  {# ------------------------------------------------------------- Records #}
+  <div class="tab-pane fade" id="records" role="tabpanel">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="h6 mb-0">Kickoff</h2>
+      {% if can_manage %}<a class="btn btn-sm btn-primary" href="{% url 'projects:kickoff_create' project.pk %}">Thêm biên bản</a>{% endif %}
+    </div>
+    {% for k in kickoffs %}
+      <div class="card shadow-sm mb-2"><div class="card-body small">
+        <div class="d-flex justify-content-between"><strong>{{ k.meeting_date|date:"d/m/Y" }} · {{ k.location|default:"" }}</strong>
+          {% if can_manage %}<a href="{% url 'projects:kickoff_update' project.pk k.pk %}">Sửa</a>{% endif %}</div>
+        <div class="text-muted">Tham dự: {{ k.attendees|default:"—" }}</div>
+        <div class="mt-1">{{ k.minutes|linebreaksbr }}</div>
+        {% if k.follow_up %}<div class="mt-1"><em>Theo dõi:</em> {{ k.follow_up|linebreaksbr }}</div>{% endif %}
+      </div></div>
+    {% empty %}
+      <p class="text-muted small">Chưa có biên bản kickoff.</p>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+      <h2 class="h6 mb-0">Hợp đồng</h2>
+      {% if can_manage %}<a class="btn btn-sm btn-primary" href="{% url 'projects:contract_create' project.pk %}">Thêm hợp đồng</a>{% endif %}
+    </div>
+    <div class="card shadow-sm"><div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light"><tr><th>Số HĐ</th><th>Tên</th><th>Trạng thái</th><th>Ngày ký</th>{% if can_view_finance %}<th>Giá trị</th>{% endif %}<th>Tài liệu</th><th></th></tr></thead>
+        <tbody>
+        {% for c in contracts %}
+          <tr><td>{{ c.contract_number|default:"—" }}</td><td>{{ c.title }}</td><td>{{ c.get_status_display }}</td><td>{{ c.signed_date|date:"d/m/Y"|default:"—" }}</td>
+            {% if can_view_finance %}<td>{{ c.contract_value|money:c.currency }}</td>{% endif %}
+            <td>{{ c.document|default:"—" }}</td>
+            <td class="text-end">{% if can_manage %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'projects:contract_update' project.pk c.pk %}">Sửa</a>{% endif %}</td></tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-muted text-center py-3">Chưa có thông tin hợp đồng.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+      <h2 class="h6 mb-0">Tài liệu <span class="text-muted fw-normal small">(chỉ lưu thông tin và vị trí file, không tải file lên)</span></h2>
+      {% if can_manage %}<a class="btn btn-sm btn-primary" href="{% url 'projects:document_create' project.pk %}">Thêm tài liệu</a>{% endif %}
+    </div>
+    <div class="card shadow-sm"><div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light"><tr><th>Loại</th><th>Tên</th><th>Vị trí lưu trữ</th><th></th></tr></thead>
+        <tbody>
+        {% for doc in documents %}
+          <tr><td>{{ doc.get_doc_type_display }}</td><td>{{ doc.title }}</td><td class="small text-break">{{ doc.external_reference|default:"—" }}</td>
+            <td class="text-end">{% if can_manage %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'projects:document_update' project.pk doc.pk %}">Sửa</a>{% endif %}</td></tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-muted text-center py-3">Chưa có tài liệu.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+
+  {# ----------------------------------------------------------- Purchases #}
+  <div class="tab-pane fade" id="purchases" role="tabpanel">
+    <div class="alert alert-secondary small py-2">Chỉ theo dõi. Phê duyệt chính thức thực hiện trên MISA; trạng thái ở đây do người dùng ghi nhận, kèm nguồn.</div>
+    {% if can_manage %}<a class="btn btn-sm btn-primary mb-2" href="{% url 'procurement:create' project.pk %}">Tạo đề nghị mua hàng</a>{% endif %}
+    <div class="card shadow-sm"><div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light"><tr><th>Số</th><th>Nội dung</th><th>Nhà cung cấp</th><th>Ngày</th>{% if can_view_finance %}<th>Dự kiến</th>{% endif %}<th>Trạng thái gần nhất</th></tr></thead>
+        <tbody>
+        {% for pr in purchase_requests %}
+          {% with s=pr.latest_status %}
+          <tr><td><a href="{{ pr.get_absolute_url }}">{{ pr.request_number }}</a></td><td>{{ pr.title }}</td><td>{{ pr.supplier_name|default:"—" }}</td><td>{{ pr.request_date|date:"d/m/Y" }}</td>
+            {% if can_view_finance %}<td>{{ pr.estimated_total|money:pr.currency }}</td>{% endif %}
+            <td>{% if s %}{{ s.status_label }} <div class="small text-muted">{{ s.get_status_source_display }} · {{ s.recorded_at|date:"d/m/Y" }}</div>{% else %}<span class="text-muted">Chưa ghi nhận</span>{% endif %}
+              {% if pr.tracking_closed %}<span class="badge text-bg-dark">Đã kết thúc theo dõi</span>{% endif %}</td></tr>
+          {% endwith %}
+        {% empty %}
+          <tr><td colspan="6" class="text-muted text-center py-3">Chưa có đề nghị mua hàng.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+
+  {# ------------------------------------------------------------ Payments #}
+  <div class="tab-pane fade" id="payments" role="tabpanel">
+    <div class="alert alert-secondary small py-2">Chỉ theo dõi. Hệ thống không thực hiện thanh toán và không thay thế phê duyệt trên MISA.</div>
+    {% if can_manage %}<a class="btn btn-sm btn-primary mb-2" href="{% url 'payments:create' project.pk %}">Tạo đề nghị thanh toán</a>{% endif %}
+    <div class="card shadow-sm"><div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light"><tr><th>Số</th><th>Người nhận</th><th>Lý do</th><th>Ngày</th>{% if can_view_finance %}<th>Số tiền</th>{% endif %}<th>Trạng thái gần nhất</th></tr></thead>
+        <tbody>
+        {% for pay in payment_requests %}
+          {% with s=pay.latest_status %}
+          <tr><td><a href="{{ pay.get_absolute_url }}">{{ pay.request_number }}</a></td><td>{{ pay.payee_name }}</td><td>{{ pay.reason|truncatechars:60 }}</td><td>{{ pay.request_date|date:"d/m/Y" }}</td>
+            {% if can_view_finance %}<td>{{ pay.amount|money:pay.currency }}</td>{% endif %}
+            <td>{% if s %}{{ s.status_label }} <div class="small text-muted">{{ s.get_status_source_display }} · {{ s.recorded_at|date:"d/m/Y" }}</div>{% else %}<span class="text-muted">Chưa ghi nhận</span>{% endif %}
+              {% if pay.tracking_closed %}<span class="badge text-bg-dark">Đã kết thúc theo dõi</span>{% endif %}</td></tr>
+          {% endwith %}
+        {% empty %}
+          <tr><td colspan="6" class="text-muted text-center py-3">Chưa có đề nghị thanh toán.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Open the tab named in the URL hash (e.g. after saving a task: #plan).
+  (function () {
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (el) {
+      el.addEventListener('shown.bs.tab', function (e) {
+        history.replaceState(null, '', e.target.getAttribute('data-bs-target'));
+      });
+    });
+    var hash = window.location.hash;
+    var trigger = hash && document.querySelector('[data-bs-target="' + hash + '"]');
+    if (trigger) bootstrap.Tab.getOrCreateInstance(trigger).show();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{# Expects: rows — purchase or payment requests with latest_status #}
+<ul class="list-unstyled small mb-0">
+  {% for r in rows %}
+    {% with s=r.latest_status %}
+    <li class="border-bottom py-1">
+      <a href="{{ r.get_absolute_url }}">{{ r.request_number }}</a> · {{ r.project.code }}
+      <div>{% if s %}{{ s.status_label }} <span class="text-muted">({{ s.recorded_at|date:"d/m/Y" }}, {{ s.get_status_source_display }})</span>{% else %}<span class="text-muted">Chưa ghi nhận trạng thái</span>{% endif %}</div>
+    </li>
+    {% endwith %}
+  {% empty %}
+    <li class="text-muted text-center py-3">Không có đề nghị đang theo dõi.</li>
+  {% endfor %}
+</ul>
