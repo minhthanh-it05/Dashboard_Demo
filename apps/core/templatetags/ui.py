@@ -1,6 +1,9 @@
+import os
 from decimal import Decimal
 
 from django import template
+from django.contrib.staticfiles import finders
+from django.templatetags.static import static
 
 register = template.Library()
 
@@ -48,6 +51,18 @@ def days_from(value, reference):
     if not value or not reference:
         return None
     return (value - reference).days
+
+
+@register.simple_tag
+def asset(path):
+    """Static URL versioned by the file's modification time.
+
+    The URL changes whenever the file does, so browsers never keep an old
+    stylesheet or script after an update (no hard refresh needed).
+    """
+    url = static(path)
+    found = finders.find(path)
+    return f"{url}?v={int(os.path.getmtime(found))}" if found else url
 
 
 @register.simple_tag(takes_context=True)

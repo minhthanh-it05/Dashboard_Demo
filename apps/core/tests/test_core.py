@@ -40,6 +40,18 @@ class DaysFromFilterTests(TestCase):
         self.assertIsNone(days_from(None, date(2026, 11, 3)))
 
 
+class AssetTagTests(TestCase):
+    def test_versions_existing_file_by_mtime(self):
+        from apps.core.templatetags.ui import asset
+
+        self.assertRegex(asset("css/netcab.css"), r"^/static/css/netcab\.css\?v=\d+$")
+
+    def test_missing_file_falls_back_to_plain_static_url(self):
+        from apps.core.templatetags.ui import asset
+
+        self.assertEqual(asset("css/does-not-exist.css"), "/static/css/does-not-exist.css")
+
+
 class MoneyFilterTests(TestCase):
     def test_vnd_has_no_decimals(self):
         self.assertEqual(money(Decimal("1250000"), "VND"), "1.250.000 VND")
